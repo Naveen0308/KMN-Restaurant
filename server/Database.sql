@@ -17,3 +17,22 @@
 --     fooddescription VARCHAR(500) NOT NULL,
 --     foodimage VARCHAR(500) NOT NULL,
 -- );
+
+
+-- CREATE TABLE cart (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     userId INT NOT NULL,
+--     foodId INT NOT NULL,
+--     quantity INT NOT NULL,
+--     FOREIGN KEY (userId) REFERENCES users(id),
+--     FOREIGN KEY (foodId) REFERENCES foods(id)
+-- );
+
+-- CREATE TABLE TableBooked (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     name VARCHAR(255) NOT NULL,
+--     members INT NOT NULL,
+--     date DATE NOT NULL,
+--     timing VARCHAR(50) NOT NULL
+-- );
+  

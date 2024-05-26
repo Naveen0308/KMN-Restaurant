@@ -1,4 +1,5 @@
 // Search.jsx
+import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 
 const Search = ({ foodItems, setFilteredFoodItems, setShowNoFoodMessage }) => {
@@ -23,12 +24,7 @@ const Search = ({ foodItems, setFilteredFoodItems, setShowNoFoodMessage }) => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="border border-gray-300 rounded-md px-4 py-2 mr-2"
       />
-      <button
-        onClick={handleSearch}
-        className="bg-blue-500 text-white px-4 py-2 rounded-md"
-      >
-        Search
-      </button>
+      <Button onClick={handleSearch}>Search</Button>
     </div>
   );
 };

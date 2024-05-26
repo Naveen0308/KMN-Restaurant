@@ -1,31 +1,53 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BsDribbble, BsFacebook, BsGithub, BsInstagram, BsTwitter } from "react-icons/bs";
+import Navbar from "./Navbar";
+import { Card, CardContent } from "@/components/ui/card";
+import Foodcard from '../Pages/Foodcard';
+import Search from './Search';
+import { Footer } from 'flowbite-react';
 import UserContext from '../../UserContext';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"; // Assuming these are the correct carousel components
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import image1 from "../../Images/image1.jpg";
 import image2 from "../../Images/image2.jpg";
 import image3 from "../../Images/image3.jpg";
 import image4 from "../../Images/image4.jpg";
 import image5 from "../../Images/image5.jpg";
-import Navbar from "./Navbar";
-import { Card, CardContent } from "@/components/ui/card"; // Importing card components for the new carousel
-import { Foodcard } from './Foodcard';
-import Search from './Search'; // Importing Search component
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import biriyaniImage from "../../Images/Biriyani.jpg";
+import starters from "../../Images/Starters.jpg";
+import friedrice from "../../Images/friedrice.jpg";
+import meals from "../../Images/meals.jpg";
+import desserts from "../../Images/desserts.jpg";
+import logo from "../../Images/small-logo.png";
 
 const Home = () => {
-  const { userId, emailId } = useContext(UserContext);
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState(null);
   const [foodItems, setFoodItems] = useState([]);
   const [filteredFoodItems, setFilteredFoodItems] = useState([]);
   const [showNoFoodMessage, setShowNoFoodMessage] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const images = [image1, image2, image3, image4, image5];
+  const foodImages = [biriyaniImage, starters, meals, friedrice, desserts];
+  const foodNames = ["Biriyani","Starters","Meals","Fried Rice","Desserts"];
 
-  // Check if the user is admin
-  const isAdmin = userId === 0 && emailId === "admin@gmail.com";
+  const isAdmin = user === 0 && email === "admin@gmail.com";
 
   useEffect(() => {
-    // Fetch food items from the backend
+    const handleUserData = () => {
+      const storedUser = JSON.parse(localStorage.getItem('user'));
+      if (storedUser) {
+        setUser(storedUser.userId);
+        setEmail(storedUser.emailId);
+      }
+    };
+    handleUserData();
+    fetchFoodItems();
+  }, []);
+
+  const fetchFoodItems = () => {
     fetch("http://localhost:8082/api/food")
       .then((response) => response.json())
       .then((data) => {
@@ -33,14 +55,45 @@ const Home = () => {
         setFilteredFoodItems(data);
       })
       .catch((error) => console.error("Error fetching food items:", error));
-  }, []);
+  };
+
+  const fetchFoodItemsByVariant = (variant) => {
+    fetch(`http://localhost:8082/api/food/by-variant/${variant}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch food items by variant');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setFilteredFoodItems(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching food items by variant:', error.message);
+        // Handle error (e.g., display error message to user)
+      });
+  };
+
+  const handleVariantCardClick = (variant) => {
+    fetchFoodItemsByVariant(variant);
+  };
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredFoodItems.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > Math.ceil(filteredFoodItems.length / itemsPerPage)) {
+      return;
+    }
+    setCurrentPage(pageNumber);
+  };
 
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       <div className="text-center mt-16">
-        <h1 className="text-4xl font-bold font-roboto">KMN Restaurant</h1>
-        <p>{isAdmin ? 'Welcome Admin User!' : 'Welcome User!'}</p>
+        <img src={logo} alt="Logo" className="h-20 mx-auto" />
       </div>
       <div className="flex justify-center mt-8">
         <Carousel className="w-full max-w-6xl">
@@ -55,15 +108,16 @@ const Home = () => {
           <CarouselNext />
         </Carousel>
       </div>
-      <div className="flex justify-center mt-8">
-        <Carousel className="w-full max-w-2xl">
+      <div className="flex justify-center mt-10">
+        <Carousel className="w-full max-w-3xl">
           <CarouselContent>
-            {Array.from({ length: 12 }).map((_, index) => (
-              <CarouselItem key={index} className="md:basis-1/4 lg:basis-1/5">
-                <div className="p-1">
-                  <Card>
-                    <CardContent className="flex aspect-square items-center justify-center p-4">
-                      <span className="text-2xl font-semibold">{index + 1}</span>
+            {foodImages.map((image, index) => (
+              <CarouselItem key={index} className="w-full md:basis-1/3 lg:basis-1/3">
+                <div className="transition-transform transform hover:scale-105">
+                  <Card className="shadow hover:shadow-lg" onClick={() => handleVariantCardClick(foodNames[index])}>
+                    <CardContent className="flex flex-col items-center justify-center p-4 h-full">
+                      <img src={image} alt={foodNames[index]} className="object-cover w-full h-48" />
+                      <span className="text-lg font-semibold mt-2">{foodNames[index]}</span>
                     </CardContent>
                   </Card>
                 </div>
@@ -74,179 +128,97 @@ const Home = () => {
           <CarouselNext />
         </Carousel>
       </div>
+      
       <Search
         foodItems={foodItems}
         setFilteredFoodItems={setFilteredFoodItems}
         setShowNoFoodMessage={setShowNoFoodMessage}
       />
-
       {showNoFoodMessage && (
         <p className="text-center mt-4 text-red-500">No food items available.</p>
       )}
-      <Foodcard foodItems={filteredFoodItems} />
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious href="#" />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#" isActive>1</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#">2</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#">3</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationEllipsis />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext href="#" />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-      <footer className="bg-gray-900 text-white py-12 md:py-16 lg:py-20">
-        <div className="container mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 lg:gap-16">
-            <div className="flex items-center">
-              <Link className="flex items-center space-x-2" to="#">
-                <MountainIcon className="h-8 w-8 text-white" />
-                <span className="text-xl font-bold">Acme Inc</span>
-              </Link>
+      <div className="flex flex-col items-center mt-8">
+        <Foodcard foodItems={currentItems} userId={user} />
+        <div className="my-8 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious href="#" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
+              </PaginationItem>
+              {[...Array(Math.ceil(filteredFoodItems.length / itemsPerPage)).keys()].map((pageNumber) => (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    href="#"
+                    isActive={pageNumber + 1 === currentPage}
+                    onClick={() => paginate(pageNumber + 1)}
+                  >
+                    {pageNumber + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === Math.ceil(filteredFoodItems.length / itemsPerPage)}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      </div>
+      <div className="flex-grow"></div>
+      <Footer container className="bg-black text-white py-12">
+        <div className="w-full px-4">
+          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
+            <div className="mb-4 sm:mb-0">
+              <Footer.Brand
+                className='h-12 w-30'
+                src={logo}
+                alt="Flowbite Logo"
+                name="Flowbite"
+              />
             </div>
-            <nav className="grid grid-cols-2 gap-4 md:gap-6 lg:gap-8">
-              <Link className="text-gray-300 hover:text-white" to="#">
-                Home
-              </Link>
-              <Link className="text-gray-300 hover:text-white" to="#">
-                About
-              </Link>
-              <Link className="text-gray-300 hover:text-white" to="#">
-                Contact
-              </Link>
-              <Link className="text-gray-300 hover:text-white" to="#">
-                Services
-              </Link>
-            </nav>
-            <div className="flex items-center justify-end space-x-4 md:space-x-6 lg:space-x-8">
-              <Link to="#" target="_blank">
-                <TwitterIcon className="h-6 w-6 text-gray-300 hover:text-white" />
-              </Link>
-              <Link to="#" target="_blank">
-                <FacebookIcon className="h-6 w-6 text-gray-300 hover:text-white" />
-              </Link>
-              <Link to="#" target="_blank">
-                <InstagramIcon className="h-6 w-6 text-gray-300 hover:text-white" />
-              </Link>
-              <Link to="#" target="_blank">
-                <LinkedinIcon className="h-6 w-6 text-gray-300 hover:text-white" />
-              </Link>
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-6">
+              <div>
+                <Footer.Title title="About" className="text-white" />
+                <Footer.LinkGroup col>
+                  <Footer.Link href="#" className="text-white">Flowbite</Footer.Link>
+                  <Footer.Link href="#" className="text-white">Tailwind CSS</Footer.Link>
+                </Footer.LinkGroup>
+              </div>
+              <div>
+                <Footer.Title title="Follow us" className="text-white" />
+                <Footer.LinkGroup col>
+                  <Footer.Link href="#" className="text-white">Github</Footer.Link>
+                  <Footer.Link href="#" className="text-white">Discord</Footer.Link>
+                </Footer.LinkGroup>
+              </div>
+              <div>
+                <Footer.Title title="Legal" className="text-white" />
+                <Footer.LinkGroup col>
+                  <Footer.Link href="#" className="text-white">Privacy Policy</Footer.Link>
+                  <Footer.Link href="#" className="text-white">Terms &amp; Conditions</Footer.Link>
+                </Footer.LinkGroup>
+              </div>
+            </div>
+          </div>
+          <Footer.Divider className="my-8 border-gray-600" />
+          <div className="w-full sm:flex sm:items-center sm:justify-between">
+            <Footer.Copyright href="#" by=" KMN Restaurant™" year={2024} className="text-white" />
+            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
+              <Footer.Icon href="#" icon={BsFacebook} className="text-white" />
+              <Footer.Icon href="#" icon={BsInstagram} className="text-white" />
+              <Footer.Icon href="#" icon={BsTwitter} className="text-white" />
+              <Footer.Icon href="#" icon={BsGithub} className="text-white" />
+              <Footer.Icon href="#" icon={BsDribbble} className="text-white" />
             </div>
           </div>
         </div>
-      </footer>
+      </Footer>
     </div>
   );
 };
 
-function FacebookIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-  );
-}
-
-function InstagramIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  );
-}
-
-function LinkedinIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect width="4" height="12" x="2" y="9" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
-}
-
-function MountainIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
-    </svg>
-  );
-}
-
-function TwitterIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-    </svg>
-  );
-}
-
 export default Home;
+
